@@ -1,7 +1,4 @@
 import postgres from "postgres";
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 
 export async function getCapeFromUser(userIdentifier: string, returnMore: boolean = false) {
