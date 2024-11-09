@@ -169,7 +169,7 @@ const buildUrl = (fileId: string | false | object) => {
 };
 
 
-app.get('/cape/byId/:capeid', async (c) => {
+app.get('/cape/byid/:capeid', async (c) => {
   const wardrobe = crypto.randomBytes(12).toString('hex');
   const { capeid } = c.req.param();
   const {bypassCache} = c.req.query();
@@ -190,7 +190,7 @@ app.get('/cape/byId/:capeid', async (c) => {
   }
 });
 
-app.get('/cape/byId/:capeid/render', async (c) => {
+app.get('/cape/byid/:capeid/render', async (c) => {
   const wardrobe = crypto.randomBytes(12).toString('hex');
   const { capeid } = c.req.param();
   const {bypassCache} = c.req.query();
@@ -213,7 +213,7 @@ app.get('/cape/byId/:capeid/render', async (c) => {
   }
 });
 
-app.get('/cape/byUser/:rawUsername', async (c) => {
+app.get('/cape/byuser/:rawUsername', async (c) => {
   const wardrobe = crypto.randomBytes(12).toString('hex');
   const { rawUsername } = c.req.param();
   const username = decodeURIComponent(rawUsername);
@@ -237,7 +237,7 @@ app.get('/cape/byUser/:rawUsername', async (c) => {
   }
 });
 
-app.get('/cape/byUser/:rawUsername/render', async (c) => {
+app.get('/cape/byuser/:rawUsername/render', async (c) => {
   const wardrobe = crypto.randomBytes(12).toString('hex');
   const { rawUsername } = c.req.param();
   const username = decodeURIComponent(rawUsername);
