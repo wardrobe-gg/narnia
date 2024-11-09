@@ -4,6 +4,7 @@ import postgres from 'postgres';
 import { createClient } from 'redis';
 import { getFile } from './getFile';
 import {client} from './getFile'
+import {isStringUUID} from '@minecraft-js/uuid'
 
 const app = new Hono();
 
@@ -36,7 +37,7 @@ app.get('/file/:fileid', async (c) => {
 });
 
 
-app.get('/cape/:capeid', async (c) => {
+app.get('/cape/byId/:capeid', async (c) => {
   const { capeid } = c.req.param();
   const {bypassCache} = c.req.query();
 
@@ -51,7 +52,7 @@ app.get('/cape/:capeid', async (c) => {
   }
 });
 
-app.get('/cape/:capeid/render', async (c) => {
+app.get('/cape/byId/:capeid/render', async (c) => {
   const { capeid } = c.req.param();
   const {bypassCache} = c.req.query();
 
@@ -69,6 +70,63 @@ app.get('/cape/:capeid/render', async (c) => {
     return c.text('Cape not found', 404);
   }
 });
+
+app.get('/cape/byUser/:rawUsername', async (c) => {
+  const { rawUsername } = c.req.param();
+  const username = decodeURIComponent(rawUsername);
+  const {bypassCache} = c.req.query();
+
+  const sql = postgres(process.env.DATABASE_URL!);
+
+  let capeFileId;
+  if (username.length === 32 || username.length === 36) {
+    let record = (await 
+    sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file 
+    FROM users, cape_slots, uploaded_capes
+    WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
+    AND users.uuid = ${username}`);
+    if (record[0]?.cape_file) {
+      capeFileId = record[0].cape_file
+    }
+    else {return c.text('Cape not found', 404)};
+  }
+  else if (username.startsWith('wuid;') && username.length === 17) {
+    let record = (await 
+      sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file 
+      FROM users, cape_slots, uploaded_capes
+      WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
+      AND users.id = ${username.split('wuid;')[1]}`);
+      if (record[0]?.cape_file) {
+        capeFileId = record[0].cape_file
+      }
+      else {return c.text('Cape not found', 404)};
+  }
+  else if (username.length < 17) {
+    let record = (await 
+      sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file 
+      FROM users, cape_slots, uploaded_capes
+      WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
+      AND users.username = ${username}`);
+      if (record[0]?.cape_file) {
+        capeFileId = record[0].cape_file
+      }
+      else {return c.text('Cape not found', 404)};
+  }
+  else {
+    return c.text('User not found', 404);
+  }
+
+  if (capeFileId) {
+    const response = await getFile(c, capeFileId, false);
+    return response;
+  }
+  else {
+    return c.text('Cape not found', 404);
+  }
+});
+
+
+
 
 app.get('/clear-cache', async (c) => {
   await redisClient.del('*');
