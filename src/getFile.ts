@@ -3,7 +3,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import postgres from 'postgres';
 import { createClient } from 'redis';
 import { PostHog } from 'posthog-node';
-import { constructHTML } from './buildPage';
+import { constructHTML, fileNotFound, genericError } from './buildPage';
 
 export const client = new PostHog(
   process.env.POSTHOG_API_KEY!,
@@ -74,12 +74,7 @@ export const getFile = async (wardrobe: string, c: any, fileid: string, bypassCa
           const file = (await sql`SELECT * FROM files WHERE id = ${fileid}`)[0];
     
           if (!file) {
-            return c.html(constructHTML({
-              texth1: 'Sorry!',
-              texth2: 'File not found',
-              textP: wardrobe,
-              title: 'File not found'
-            }), 404);
+            return fileNotFound(wardrobe, c)
           }
     
           const decodedFileLocation = decodeURIComponent(file.file_location).replace(/^\/|\/$/g, '');
@@ -93,12 +88,7 @@ export const getFile = async (wardrobe: string, c: any, fileid: string, bypassCa
           const response = await s3Client.send(command);
     
           if (!response.Body) {
-            return c.html(constructHTML({
-              texth1: 'Sorry!',
-              texth2: 'File not found',
-              textP: wardrobe,
-              title: 'File not found'
-            }), 404);
+            return fileNotFound(wardrobe, c)
           }
     
           // Convert readable stream to buffer
@@ -156,11 +146,6 @@ export const getFile = async (wardrobe: string, c: any, fileid: string, bypassCa
     
       } catch (error) {
         console.error('Error fetching file:', error);
-        return c.html(constructHTML({
-          title: 'Error fetching file',
-          texth1: 'Sorry!',
-          texth2: 'Error fetching file',
-          textP: wardrobe,
-        }), 500);
+        return genericError(wardrobe, c)
       }
 };

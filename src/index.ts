@@ -8,7 +8,7 @@ import { getCapeFromUser } from './getFileId';
 import { CapeFile } from './getFileId';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { constructHTML } from './buildPage';
+import { capeNotFound, constructHTML, genericError, userNotFound } from './buildPage';
 import crypto from 'crypto';
 
 
@@ -132,12 +132,7 @@ app.get('/:rawUser', async(c) => {
       capeRecord = {cape, ...capeRecord}
     }
     else {
-      return c.html(constructHTML({
-        texth1: 'Sorry!',
-        texth2: 'User not found',
-        textP: wardrobe,
-        title: 'User not found'
-      }), 404)
+      return userNotFound(wardrobe, c)
     }
   
     capeRecord = {...capeRecord, cosmetics: []};
@@ -147,12 +142,7 @@ app.get('/:rawUser', async(c) => {
 
   catch (e) {
     console.error(wardrobe, e);
-    return c.html(constructHTML({
-      texth1: 'Sorry!',
-      texth2: 'An error occured',
-      textP: wardrobe,
-      title: 'An error occurred'
-    }), 500)
+    return genericError(wardrobe, c);
   }
   
   
@@ -181,12 +171,7 @@ app.get('/cape/byid/:capeid', async (c) => {
     const response = await getFile(wardrobe, c, fileId, false);
     return response;
   } catch (e) {
-    return c.html(constructHTML({
-      texth1: 'Sorry!',
-      texth2: 'Cape not found',
-      textP: wardrobe,
-      title: 'Cape not found'
-    }), 404)
+    return capeNotFound(wardrobe, c)
   }
 });
 
@@ -204,12 +189,7 @@ app.get('/cape/byid/:capeid/render', async (c) => {
     return response;
   } catch (e) {
     console.log(e);
-    return c.html(constructHTML({
-      texth1: 'Sorry!',
-      texth2: 'Cape not found',
-      textP: wardrobe,
-      title: 'Cape not found'
-    }), 404)
+    return capeNotFound(wardrobe, c)
   }
 });
 
@@ -228,12 +208,7 @@ app.get('/cape/byuser/:rawUsername', async (c) => {
     return response;
   }
   else {
-    return c.html(constructHTML({
-      texth1: 'Sorry!',
-      texth2: 'User not found',
-      textP: wardrobe,
-      title: 'User not found'
-    }), 404)
+    return userNotFound(wardrobe,c)
   }
 });
 
@@ -252,12 +227,7 @@ app.get('/cape/byuser/:rawUsername/render', async (c) => {
     return response;
   }
   else {
-    return c.html(constructHTML({
-      texth1: 'Sorry!',
-      texth2: 'User not found',
-      textP: wardrobe,
-      title: 'User not found'
-    }), 404)
+    return userNotFound(wardrobe,c)
   }
 });
 
