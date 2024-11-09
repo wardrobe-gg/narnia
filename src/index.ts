@@ -9,6 +9,7 @@ import { CapeFile } from './getFileId';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { constructHTML } from './buildPage';
+import crypto from 'crypto';
 
 
 const app = new Hono();
@@ -66,34 +67,65 @@ app.get('/file/:fileid', async (c) => {
 app.get('/:rawUser', async(c) => {
   const {rawUser} = c.req.param();
   let user = decodeURIComponent(rawUser).split('.json')[0];
-
+  const sql = postgres(process.env.DATABASE_URL);
   let capeFile: CapeFile = await getCapeFromUser(user, true);
 
   let capeRecord = {};
 
   if (capeFile !== null) {
-    console.log(capeFile);
+
+    // Get the animation information so that we can inline it.
     let animationJson: any = false;
     if (capeFile.animation !== false) {
       const animationResponse = await fetch(`${buildUrl(capeFile.animation)}`);
       if (animationResponse.ok) {
         animationJson = await animationResponse.json();
-        console.log(animationJson);
       } else {
         console.error("Failed to fetch animation data.");
       }
     }
+
+    // Some legacy capes don't have file hashes. Calculate them if this is the case.
+    if (!capeFile.capeHash) {
+      console.log('Found a cape without a hash. Hashing it now.')
+      
+      const capeImage = await fetch(`${buildUrl(capeFile.texture)}`);
+      
+      if (capeImage.ok) {
+        const capeBuffer = Buffer.from(await capeImage.arrayBuffer());
+        const hash = crypto.createHash('sha256').update(capeBuffer as unknown as crypto.BinaryLike).digest('hex');
+
+        capeFile.capeHash = hash;
+        await sql`UPDATE uploaded_capes SET cape_file_hash = ${hash} WHERE id = ${capeFile.id}`
+
+        client.capture({
+          distinctId: crypto.randomUUID(),
+          event: 'legacy_cape_hashed',
+          properties: {
+            cape_id: capeFile.id
+          }
+        })
+      } else {
+        console.error('Failed to fetch cape image.');
+      }
+    }
+
+
     let cape = {
+      id: capeFile.id,
       texture: buildUrl(capeFile.texture),
       name: capeFile.name ?? false,
       render: buildUrl(capeFile.render),
+      capeHash: capeFile.capeHash,
       animation: animationJson.animation ?? false,
       emissive: buildUrl(capeFile.emissive),
       specular: buildUrl(capeFile.specular),
       normal: buildUrl(capeFile.normal)
     } as CapeFile
-    capeRecord = {...capeRecord, cape}
+    capeRecord = {cape, ...capeRecord}
   }
+
+  capeRecord = {...capeRecord, cosmetics: []};
 
   return c.json(capeRecord);
   
@@ -128,8 +160,6 @@ app.get('/cape/byId/:capeid', async (c) => {
 app.get('/cape/byId/:capeid/render', async (c) => {
   const { capeid } = c.req.param();
   const {bypassCache} = c.req.query();
-
-  console.log(`id: ${capeid}`);
 
   const sql = postgres(process.env.DATABASE_URL!);
   try {

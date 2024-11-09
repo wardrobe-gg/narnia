@@ -29,7 +29,7 @@ export async function getCapeFromUser(userIdentifier: string, returnMore: boolea
     }
     else if (userIdentifier.length < 17) {
       let record = (await 
-        sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file, uploaded_capes.name, uploaded_capes.render, uploaded_capes.mcmeta, uploaded_capes.emissive_layer, uploaded_capes.specular_layer, uploaded_capes.normal_layer
+        sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file, uploaded_capes.name, uploaded_capes.render, uploaded_capes.mcmeta, uploaded_capes.emissive_layer, uploaded_capes.specular_layer, uploaded_capes.normal_layer, uploaded_capes.id, uploaded_capes.cape_file_hash
         FROM users, cape_slots, uploaded_capes
         WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
         AND users.username = ${userIdentifier}`);
@@ -45,9 +45,11 @@ export async function getCapeFromUser(userIdentifier: string, returnMore: boolea
     if (capeFile) {
       if (returnMore === true) {
         return {
+          id: capeFile.id,
           texture: capeFile.cape_file ?? false,
           name: capeFile.name ?? false,
           render: capeFile.render ?? false,
+          capeHash: capeFile.cape_file_hash ?? false,
           animation: capeFile.mcmeta ?? false,
           specular: capeFile.specular_layer ?? false,
           emissive: capeFile.emissive_layer ?? false,
@@ -62,9 +64,11 @@ export async function getCapeFromUser(userIdentifier: string, returnMore: boolea
 }
 
 export type CapeFile = {
+  id: number,
   texture: string | false,
   name: string | false,
   render: string | false,
+  capeHash: string | undefined,
   animation: string | false | object,
   specular: string | false,
   emissive: string | false,
