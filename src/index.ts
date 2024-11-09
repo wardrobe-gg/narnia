@@ -103,7 +103,7 @@ app.get('/:rawUser', async(c) => {
           const hash = crypto.createHash('sha256').update(capeBuffer as unknown as crypto.BinaryLike).digest('hex');
   
           capeFile.capeHash = hash;
-          await sql`UPDATE uploaded_capes SET cape_file_hash = ${hash} WHERE id = ${capeFile.id}`
+          await sql`UPDATE files SET hash = ${hash} WHERE id = ${capeFile.texture}`
   
           client.capture({
             distinctId: crypto.randomUUID(),
@@ -201,7 +201,7 @@ app.get('/cape/byuser/:rawUsername', async (c) => {
 
   const sql = postgres(process.env.DATABASE_URL!);
 
-  const fileId = await getCapeFromUser(username);
+  const fileId = await getCapeFromUser((username).replaceAll('-', ''));
 
   if (fileId) {
     const response = await getFile(wardrobe, c, fileId, false);
@@ -220,7 +220,7 @@ app.get('/cape/byuser/:rawUsername/render', async (c) => {
 
   const sql = postgres(process.env.DATABASE_URL!);
 
-  const file = await getCapeFromUser(username, true);
+  const file = await getCapeFromUser((username).replaceAll('-', ''), true);
 
   if (file) {
     const response = await getFile(wardrobe, c, file.render, false);
@@ -234,9 +234,41 @@ app.get('/cape/byuser/:rawUsername/render', async (c) => {
 
 
 
-app.get('/utils/clear-cache', async (c) => {
-  await redisClient.del('*');
-  return c.text('Cache cleared', 200);
+app.get('/utils/cache/clear', async (c) => {
+  try {
+    const keys = await redisClient.keys('*');  // Get all keys
+    if (keys.length > 0) {
+      await redisClient.del(...keys);  // Delete all keys
+    }
+    return c.text('Cache cleared', 200);
+  } catch (err) {
+    console.error('Error clearing cache:', err);
+    return c.text('Failed to clear cache', 500);
+  }
+});
+
+app.get('/utils/cache/clear-user/:userIdentifier', async (c) => {
+  const {userIdentifier} = c.req.param()
+  const sql = postgres(process.env.DATABASE_URL);
+  try {
+    const userIdentifiers = await sql` SELECT id, username, uuid 
+            FROM users 
+            WHERE username = ${userIdentifier} 
+               OR uuid = ${userIdentifier.replaceAll('-', '')} 
+               OR id = ${userIdentifier.replace('wuid;', '')}`
+    const {id, uuid, username} = userIdentifiers[0];
+    
+    console.log(id, uuid, username);
+
+    await redisClient.del(`user:wuid;${id}`)
+    await redisClient.del(`user:${username}`)
+    await redisClient.del(`user:${uuid}`)
+    await redisClient.del(`cape:${uuid}`)
+    return c.text('Cache cleared', 200);
+  } catch (err) {
+    console.error('Error clearing cache:', err);
+    return c.text('Failed to clear cache', 500);
+  }
 });
 
 // Gracefully shutdown PostHog client when server terminates

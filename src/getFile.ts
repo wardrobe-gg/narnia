@@ -28,6 +28,7 @@ const s3Client = new S3Client({
 export const getFile = async (wardrobe: string, c: any, fileid: string, bypassCache: boolean) => {
     try {
         // Check Redis cache first
+
         const cachedFile = await redisClient.get(`file:${fileid}`);
         
         if (cachedFile && bypassCache !== true) {
@@ -133,6 +134,8 @@ export const getFile = async (wardrobe: string, c: any, fileid: string, bypassCa
     
           // Set response headers
           reqResponse.headers.set('Content-Type', file.content_type ?? 'application/octet-stream');
+          reqResponse.headers.set('X-Hash', file.hash);
+          reqResponse.headers.set('X-Wardrobe', wardrobe);
     
           if (file.content_type?.startsWith('image/') || file.content_type?.startsWith('video/')) {
             reqResponse.headers.set('Content-Disposition', `inline; filename="${file.file_name}"`);
