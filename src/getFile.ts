@@ -2,6 +2,12 @@ import { Hono } from 'hono';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import postgres from 'postgres';
 import { createClient } from 'redis';
+import { PostHog } from 'posthog-node';
+
+export const client = new PostHog(
+  'phc_g9wmvbZxlaoPZDeh3EIOcHteCNLMYBb6PZkCF167A0U',
+  { host: 'https://us.i.posthog.com' }
+)
 
 const s3Client = new S3Client({
     endpoint: process.env.DO_SPACE_ENDPOINT,
@@ -29,7 +35,16 @@ export const getFile = async (c: any, fileid: string, bypassCache: boolean) => {
           const contentType = data.contentType ?? 'application/octet-stream';
           const base64Content = data.content;
           const filename = data.fileName;
+          const should_cache = data.cache
       
+          client.capture({
+            distinctId: (crypto.randomUUID()),
+            event: 'cache_hit',
+            properties: {
+              should_cache: should_cache,
+              file_id: fileid,
+            },
+          })
         
           // Convert base64 content to a buffer
           const buffer = Buffer.from(base64Content, 'base64');
@@ -46,7 +61,7 @@ export const getFile = async (c: any, fileid: string, bypassCache: boolean) => {
           } else {
             response.headers.set('Content-Disposition', `attachment; filename="${filename}"`);
           }
-    
+  
           
           return response;
         }
@@ -84,13 +99,33 @@ export const getFile = async (c: any, fileid: string, bypassCache: boolean) => {
           const cacheData = {
             contentType: file.content_type ?? 'application/octet-stream',
             content: base64Content,
-            fileName: file.file_name
+            fileName: file.file_name,
+            cache: file.cache
           };
     
-          if (bypassCache !== true) {
+          if (bypassCache !== true && file.cache === true) {
+            console.log('Caching file');
             await redisClient.set(`file:${fileid}`, JSON.stringify(cacheData), {
                 EX: 3600 // Cache for 1 hour
             });
+
+            client.capture({
+              distinctId: (crypto.randomUUID()),
+              event: 'cache_miss',
+              properties: {
+                  file_id: fileid,
+              },
+            })
+          }
+          else if (file.cache === false) {
+            console.log('Uncached file');
+            client.capture({
+              distinctId: (crypto.randomUUID()),
+              event: 'uncached_file',
+              properties: {
+                file_id: fileid,
+              },
+            })
           }
     
           const reqResponse = new Response(buffer);

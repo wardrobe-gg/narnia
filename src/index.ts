@@ -3,6 +3,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import postgres from 'postgres';
 import { createClient } from 'redis';
 import { getFile } from './getFile';
+import {client} from './getFile'
 
 const app = new Hono();
 
@@ -68,6 +69,23 @@ app.get('/cape/:capeid/render', async (c) => {
     return c.text('Cape not found', 404);
   }
 });
+
+app.get('/clear-cache', async (c) => {
+  await redisClient.del('*');
+  return c.text('Cache cleared', 200);
+});
+
+// Gracefully shutdown PostHog client when server terminates
+process.on('SIGTERM', async () => {
+  await client.shutdown();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  await client.shutdown();
+  process.exit(0);
+});
+
 
 
 export default app;
