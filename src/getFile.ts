@@ -5,7 +5,7 @@ import { createClient } from 'redis';
 import { PostHog } from 'posthog-node';
 
 export const client = new PostHog(
-  'phc_g9wmvbZxlaoPZDeh3EIOcHteCNLMYBb6PZkCF167A0U',
+  process.env.POSTHOG_API_KEY!,
   { host: 'https://us.i.posthog.com' }
 )
 
