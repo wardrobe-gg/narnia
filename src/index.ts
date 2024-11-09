@@ -4,6 +4,8 @@ import postgres from 'postgres';
 import { createClient } from 'redis';
 import { getFile } from './getFile';
 import {client} from './getFile'
+import { getCapeFromUser } from './getFileId';
+import { CapeFile } from './getFileId';
 
 const app = new Hono();
 
@@ -34,6 +36,51 @@ app.get('/file/:fileid', async (c) => {
   const response = await getFile(c, fileid, false);
   return response;
 });
+
+app.get('/:rawUser', async(c) => {
+  const {rawUser} = c.req.param();
+  let user = decodeURIComponent(rawUser).split('.json')[0];
+
+  let capeFile: CapeFile = await getCapeFromUser(user, true);
+
+  let capeRecord = {};
+
+  if (capeFile !== null) {
+    console.log(capeFile);
+    let animationJson: any = false;
+    if (capeFile.animation !== false) {
+      const animationResponse = await fetch(`${buildUrl(capeFile.animation)}`);
+      if (animationResponse.ok) {
+        animationJson = await animationResponse.json();
+        console.log(animationJson);
+      } else {
+        console.error("Failed to fetch animation data.");
+      }
+    }
+    let cape = {
+      texture: buildUrl(capeFile.texture),
+      name: capeFile.name ?? false,
+      render: buildUrl(capeFile.render),
+      animation: animationJson.animation ?? false,
+      emissive: buildUrl(capeFile.emissive),
+      specular: buildUrl(capeFile.specular),
+      normal: buildUrl(capeFile.normal)
+    } as CapeFile
+    capeRecord = {...capeRecord, cape}
+  }
+
+  return c.json(capeRecord);
+  
+})
+
+const buildUrl = (fileId: string | false | object) => {
+  if (typeof fileId === 'string') {
+    return `https://narnia.wardrobe.gg/file/` + fileId
+  }
+  else {
+    return false
+  }
+};
 
 
 app.get('/cape/byId/:capeid', async (c) => {
@@ -77,46 +124,10 @@ app.get('/cape/byUser/:rawUsername', async (c) => {
 
   const sql = postgres(process.env.DATABASE_URL!);
 
-  let capeFileId;
-  if (username.length === 32 || username.length === 36) {
-    let record = (await 
-    sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file 
-    FROM users, cape_slots, uploaded_capes
-    WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
-    AND users.uuid = ${username}`);
-    if (record[0]?.cape_file) {
-      capeFileId = record[0].cape_file
-    }
-    else {return c.text('Cape not found', 404)};
-  }
-  else if (username.startsWith('wuid;') && username.length === 17) {
-    let record = (await 
-      sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file 
-      FROM users, cape_slots, uploaded_capes
-      WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
-      AND users.id = ${username.split('wuid;')[1]}`);
-      if (record[0]?.cape_file) {
-        capeFileId = record[0].cape_file
-      }
-      else {return c.text('Cape not found', 404)};
-  }
-  else if (username.length < 17) {
-    let record = (await 
-      sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file 
-      FROM users, cape_slots, uploaded_capes
-      WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
-      AND users.username = ${username}`);
-      if (record[0]?.cape_file) {
-        capeFileId = record[0].cape_file
-      }
-      else {return c.text('Cape not found', 404)};
-  }
-  else {
-    return c.text('User not found', 404);
-  }
+  const fileId = await getCapeFromUser(username);
 
-  if (capeFileId) {
-    const response = await getFile(c, capeFileId, false);
+  if (fileId) {
+    const response = await getFile(c, fileId, false);
     return response;
   }
   else {

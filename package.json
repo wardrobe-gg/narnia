@@ -5,6 +5,7 @@
     "start": "bun run src/index.ts"
   },
   "dependencies": {
+    "axios": "^1.7.7",
     "hono": "^4.6.9",
     "node-redis": "^0.1.7",
     "pocketbase": "^0.21.5",
