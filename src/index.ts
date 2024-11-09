@@ -4,7 +4,6 @@ import postgres from 'postgres';
 import { createClient } from 'redis';
 import { getFile } from './getFile';
 import {client} from './getFile'
-import {isStringUUID} from '@minecraft-js/uuid'
 
 const app = new Hono();
 
