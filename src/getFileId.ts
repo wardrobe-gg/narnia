@@ -1,76 +1,94 @@
 import postgres from "postgres";
+import { createClient } from "redis";
 
+const redisClient = createClient({ url: process.env.REDIS_URL! });
+redisClient.connect().catch(console.error);
 
 export async function getCapeFromUser(userIdentifier: string, returnMore: boolean = false) {
-    const sql = postgres(process.env.DATABASE_URL);
+    // Check Redis cache first
+    const cachedCape = await redisClient.get(`cape:${userIdentifier}`);
+    if (cachedCape) {
+        // Parse the cached data if exists
+        const capeData = JSON.parse(cachedCape);
+        return returnMore ? capeData : capeData.texture;
+    }
 
+    const sql = postgres(process.env.DATABASE_URL);
     let capeFile;
+    let userUUID;
+
     if (userIdentifier.length === 32 || userIdentifier.length === 36) {
-      let record = (await 
-      sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file, uploaded_capes.name, uploaded_capes.render, uploaded_capes.mcmeta, uploaded_capes.emissive_layer, uploaded_capes.specular_layer, uploaded_capes.normal_layer
-      FROM users, cape_slots, uploaded_capes
-      WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
-      AND users.uuid = ${userIdentifier}`);
-      if (record[0]?.cape_file) {
-        capeFile = record[0]
-      }
-      else {return null};
-    }
+        const record = await sql`
+            SELECT 
+                users.cape, cape_slots.cape_id, uploaded_capes.*, users.uuid
+            FROM 
+                users
+            JOIN cape_slots ON users.cape = cape_slots.id
+            JOIN uploaded_capes ON cape_slots.cape_id = uploaded_capes.id
+            WHERE 
+                users.uuid = ${userIdentifier}`;
+
+        if (record[0]?.cape_file) capeFile = record[0];
+    } 
     else if (userIdentifier.startsWith('wuid;') && userIdentifier.length === 17) {
-      let record = (await 
-        sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file, uploaded_capes.name, uploaded_capes.render, uploaded_capes.mcmeta, uploaded_capes.emissive_layer, uploaded_capes.specular_layer, uploaded_capes.normal_layer
-        FROM users, cape_slots, uploaded_capes
-        WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
-        AND users.id = ${userIdentifier.split('wuid;')[1]}`);
-        if (record[0]?.cape_file) {
-          capeFile = record[0].cape_file
-        }
-        else {return null};
-    }
+        const userId = userIdentifier.split('wuid;')[1];
+        const record = await sql`
+            SELECT 
+                users.cape, cape_slots.cape_id, uploaded_capes.*, users.uuid
+            FROM 
+                users
+            JOIN cape_slots ON users.cape = cape_slots.id
+            JOIN uploaded_capes ON cape_slots.cape_id = uploaded_capes.id
+            WHERE 
+                users.id = ${userId}`;
+        
+
+        if (record[0]?.cape_file) capeFile = record[0];
+    } 
     else if (userIdentifier.length < 17) {
-      let record = (await 
-        sql`SELECT users.cape, cape_slots.cape_id, uploaded_capes.cape_file, uploaded_capes.name, uploaded_capes.render, uploaded_capes.mcmeta, uploaded_capes.emissive_layer, uploaded_capes.specular_layer, uploaded_capes.normal_layer, uploaded_capes.id, uploaded_capes.cape_file_hash
-        FROM users, cape_slots, uploaded_capes
-        WHERE users.cape = cape_slots.id AND cape_slots.cape_id = uploaded_capes.id
-        AND users.username = ${userIdentifier}`);
-        if (record[0]?.cape_file) {
-          capeFile = record[0]
-        }
-        else {return null};
+        const record = await sql`
+            SELECT 
+                users.cape, cape_slots.cape_id, uploaded_capes.*, users.uuid
+            FROM 
+                users
+            JOIN cape_slots ON users.cape = cape_slots.id
+            JOIN uploaded_capes ON cape_slots.cape_id = uploaded_capes.id
+            WHERE 
+                users.username = ${userIdentifier}`;
+
+        if (record[0]?.cape_file) capeFile = record[0];
+    } else {
+        return null;
     }
-    else {
-      return null;
-    }
-  
-    if (capeFile) {
-      if (returnMore === true) {
-        return {
-          id: capeFile.id,
-          texture: capeFile.cape_file ?? false,
-          name: capeFile.name ?? false,
-          render: capeFile.render ?? false,
-          capeHash: capeFile.cape_file_hash ?? false,
-          animation: capeFile.mcmeta ?? false,
-          specular: capeFile.specular_layer ?? false,
-          emissive: capeFile.emissive_layer ?? false,
-          normal: capeFile.normal_layer ?? false
-        } as CapeFile
-      }
-      return capeFile.cape_file
-    }
-    else {
-      return null;
-    }
+
+    if (!capeFile) return null;
+
+    const capeData = {
+        id: capeFile.id,
+        texture: capeFile.cape_file ?? false,
+        name: capeFile.name ?? false,
+        render: capeFile.render ?? false,
+        capeHash: capeFile.cape_file_hash ?? false,
+        animation: capeFile.mcmeta ?? false,
+        specular: capeFile.specular_layer ?? false,
+        emissive: capeFile.emissive_layer ?? false,
+        normal: capeFile.normal_layer ?? false
+    } as CapeFile;
+
+    // Cache the result in Redis
+    await redisClient.set(`cape:${capeFile.uuid}`, JSON.stringify(capeData), { EX: 3600 }); // Cache for 1 hour
+
+    return returnMore ? capeData : capeData.texture;
 }
 
 export type CapeFile = {
-  id: number,
-  texture: string | false,
-  name: string | false,
-  render: string | false,
-  capeHash: string | undefined,
-  animation: string | false | object,
-  specular: string | false,
-  emissive: string | false,
-  normal: string | false
-}
+    id: number,
+    texture: string | false,
+    name: string | false,
+    render: string | false,
+    capeHash: string | undefined,
+    animation: string | false | object,
+    specular: string | false,
+    emissive: string | false,
+    normal: string | false
+};

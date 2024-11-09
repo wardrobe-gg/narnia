@@ -240,7 +240,7 @@ app.get('/cape/byUser/:rawUsername', async (c) => {
 
 
 
-app.get('/clear-cache', async (c) => {
+app.get('/utils/clear-cache', async (c) => {
   await redisClient.del('*');
   return c.text('Cache cleared', 200);
 });
