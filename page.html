@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{textPlaceholder}}</title>
+    <title>{{pageTitle}}</title>
     <style>
         @font-face {
             font-family: 'MinecraftFont';
@@ -28,10 +28,28 @@
 
         h1 {
             color: white;
-            font-size: 2.5rem;
+            font-size: 7rem;
             text-align: right;
             white-space: nowrap;
             font-family: 'MinecraftFont'; /* Apply the custom font */
+            margin: -15px;
+            letter-spacing: 5px;
+            margin-left: 2px;
+            text-align: center;
+        }
+        h2 {
+            font-family: 'MinecraftFont';
+            font-size: 2.5rem;
+            color: white;
+            text-align: center;
+        }
+
+        p {
+            font-size: 2.5rem; /* p tag font-size */
+            font-family: 'BasicallyASansSerifFont';
+            color: #FF7EA8;
+            margin: 20px;
+            text-align: center;
         }
 
         img {
@@ -48,16 +66,19 @@
 </head>
 <body>
     <div style="display: flex; flex-direction: column;">
-        <img src="/pageStuff/pageTop.png" />
+        <img src="/pageStuff/pageBg.jpg" style="
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+        " />
 
-        <div class="tidbit">
-            <img src="/pageStuff/pageTidbit.png" />
-            <div style="display: flex; flex-direction: column; width: 100%; height: 100%; margin: auto;
-            padding: 3rem; gap:0">
-                <h1>{{textPlaceholder}}</h1>
-                <span style="color: white; text-align: right; font-family: 'BasicallyASansSerifFont'; font-size: 1.5rem;">{{textSecondary}}</span>
-            </div>
+        <div style="position: fixed; width: 100vw; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 40px;">
+            <h2>{{texth2}}</h2>
+            <h1>{{texth1}}</h1>
+            <p>{{textP}}</p>
         </div>
+
+        
     </div>
 </body>
 </html>

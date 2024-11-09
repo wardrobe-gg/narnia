@@ -3,6 +3,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import postgres from 'postgres';
 import { createClient } from 'redis';
 import { PostHog } from 'posthog-node';
+import { constructHTML } from './buildPage';
 
 export const client = new PostHog(
   process.env.POSTHOG_API_KEY!,
@@ -24,7 +25,7 @@ const s3Client = new S3Client({
   redisClient.connect().catch(console.error);
 
 
-export const getFile = async (c: any, fileid: string, bypassCache: boolean) => {
+export const getFile = async (wardrobe: string, c: any, fileid: string, bypassCache: boolean) => {
     try {
         // Check Redis cache first
         const cachedFile = await redisClient.get(`file:${fileid}`);
@@ -73,7 +74,12 @@ export const getFile = async (c: any, fileid: string, bypassCache: boolean) => {
           const file = (await sql`SELECT * FROM files WHERE id = ${fileid}`)[0];
     
           if (!file) {
-            return c.text('File not found', 404);
+            return c.html(constructHTML({
+              texth1: 'Sorry!',
+              texth2: 'File not found',
+              textP: wardrobe,
+              title: 'File not found'
+            }), 404);
           }
     
           const decodedFileLocation = decodeURIComponent(file.file_location).replace(/^\/|\/$/g, '');
@@ -87,7 +93,12 @@ export const getFile = async (c: any, fileid: string, bypassCache: boolean) => {
           const response = await s3Client.send(command);
     
           if (!response.Body) {
-            return c.text('File not found', 404);
+            return c.html(constructHTML({
+              texth1: 'Sorry!',
+              texth2: 'File not found',
+              textP: wardrobe,
+              title: 'File not found'
+            }), 404);
           }
     
           // Convert readable stream to buffer
@@ -145,6 +156,11 @@ export const getFile = async (c: any, fileid: string, bypassCache: boolean) => {
     
       } catch (error) {
         console.error('Error fetching file:', error);
-        return c.text('Error fetching file', 500);
+        return c.html(constructHTML({
+          title: 'Error fetching file',
+          texth1: 'Sorry!',
+          texth2: 'Error fetching file',
+          textP: wardrobe,
+        }), 500);
       }
 };
