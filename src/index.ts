@@ -6,6 +6,10 @@ import { getFile } from './getFile';
 import {client} from './getFile'
 import { getCapeFromUser } from './getFileId';
 import { CapeFile } from './getFileId';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { constructHTML } from './buildPage';
+
 
 const app = new Hono();
 
@@ -24,9 +28,31 @@ const redisClient = createClient({ url: process.env.REDIS_URL! });
 redisClient.connect().catch(console.error);
 
 app.get('/', (c) => {
-  return c.text('Hello Hono!', 200);
+  return c.html(constructHTML('Welcome to Narnia', 'Aslan Awaits'))
 });
 
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+app.get('/pageStuff/pageTop.png', async (c) => {
+  const filePath = path.join(__dirname, 'pageStuff', 'pageTop.png');
+  return new Response(Bun.file(filePath));
+});
+
+app.get('/pageStuff/pageTidbit.png', async (c) => {
+  const filePath = path.join(__dirname, 'pageStuff', 'pageTidbit.png');
+  return new Response(Bun.file(filePath));
+});
+
+app.get('/pageStuff/mcFont.ttf', async (c) => {
+  const filePath = path.join(__dirname, 'pageStuff', 'Ranyth5x_BIG.ttf');
+  return new Response(Bun.file(filePath));
+});
+
+app.get('/pageStuff/ssFont.ttf', async (c) => {
+  const filePath = path.join(__dirname, 'pageStuff', 'BasicallyASansSerif-Regular.ttf');
+  return new Response(Bun.file(filePath));
+});
 
 
 app.get('/file/:fileid', async (c) => {
@@ -72,6 +98,7 @@ app.get('/:rawUser', async(c) => {
   return c.json(capeRecord);
   
 })
+
 
 const buildUrl = (fileId: string | false | object) => {
   if (typeof fileId === 'string') {
