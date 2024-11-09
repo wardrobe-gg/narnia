@@ -49,7 +49,7 @@ app.get('/pageStuff/pageBg.jpg', async (c) => {
 
 app.get('/pageStuff/mcFont.ttf', async (c) => {
   const wardrobe = crypto.randomBytes(12).toString('hex');
-  const filePath = path.join(__dirname, 'pageStuff', 'Ranyth5x_BIG.ttf');
+  const filePath = path.join(__dirname, 'pageStuff', 'Ranyth_uppercase.ttf');
   return new Response(Bun.file(filePath));
 });
 
