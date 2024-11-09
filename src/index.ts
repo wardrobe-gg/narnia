@@ -237,6 +237,30 @@ app.get('/cape/byUser/:rawUsername', async (c) => {
   }
 });
 
+app.get('/cape/byUser/:rawUsername/render', async (c) => {
+  const wardrobe = crypto.randomBytes(12).toString('hex');
+  const { rawUsername } = c.req.param();
+  const username = decodeURIComponent(rawUsername);
+  const {bypassCache} = c.req.query();
+
+  const sql = postgres(process.env.DATABASE_URL!);
+
+  const file = await getCapeFromUser(username, true);
+
+  if (file) {
+    const response = await getFile(wardrobe, c, file.render, false);
+    return response;
+  }
+  else {
+    return c.html(constructHTML({
+      texth1: 'Sorry!',
+      texth2: 'User not found',
+      textP: wardrobe,
+      title: 'User not found'
+    }), 404)
+  }
+});
+
 
 
 
