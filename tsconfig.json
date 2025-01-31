@@ -4,8 +4,8 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "target": "ES2017",
-    "module": "ES2022",  // or "ESNext"
+    "module": "ES2022", // or "ESNext"
     "moduleResolution": "node",
-    "esModuleInterop": true,
+    "esModuleInterop": true
   }
 }

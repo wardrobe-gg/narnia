@@ -1,84 +1,92 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{pageTitle}}</title>
     <style>
-        @font-face {
-            font-family: 'MinecraftFont';
-            src: url('/pageStuff/mcFont.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'BasicallyASansSerifFont';
-            src: url('/pageStuff/ssFont.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
+      @font-face {
+        font-family: "MinecraftFont";
+        src: url("/pageStuff/mcFont.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "BasicallyASansSerifFont";
+        src: url("/pageStuff/ssFont.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+      }
 
-        body {
-            background-color: black;
-            margin: auto;
-            display: flex;
-            align-items: end;
-            height: 100vh;
-        }
+      body {
+        background-color: black;
+        margin: auto;
+        display: flex;
+        align-items: end;
+        height: 100vh;
+      }
 
-        h1 {
-            color: white;
-            font-size: 7rem;
-            text-align: right;
-            white-space: nowrap;
-            font-family: 'MinecraftFont'; /* Apply the custom font */
-            margin: -15px;
-            letter-spacing: 5px;
-            margin-left: 2px;
-            text-align: center;
-        }
-        h2 {
-            font-family: 'MinecraftFont';
-            font-size: 2.5rem;
-            color: white;
-            text-align: center;
-        }
+      h1 {
+        color: white;
+        font-size: 7vw;
+        text-align: right;
+        white-space: nowrap;
+        font-family: "MinecraftFont"; /* Apply the custom font */
+        margin: -15px;
+        letter-spacing: 5px;
+        margin-left: 2px;
+        text-align: center;
+      }
+      h2 {
+        font-family: "MinecraftFont";
+        font-size: 2.5rem;
+        color: white;
+        text-align: center;
+      }
 
-        p {
-            font-size: 2.5rem; /* p tag font-size */
-            font-family: 'BasicallyASansSerifFont';
-            color: #FF7EA8;
-            margin: 20px;
-            text-align: center;
-        }
+      p {
+        font-size: 2.5rem; /* p tag font-size */
+        font-family: "BasicallyASansSerifFont";
+        color: #ff7ea8;
+        margin: 20px;
+        text-align: center;
+      }
 
-        img {
-            max-width: 100%;
-        }
+      img {
+        max-width: 100%;
+      }
 
-        .tidbit {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+      .tidbit {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
     </style>
-</head>
-<body>
-    <div style="display: flex; flex-direction: column;">
-        <img src="/pageStuff/pageBg.jpg" style="
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-        " />
+  </head>
+  <body>
+    <div style="display: flex; flex-direction: column">
+      <img
+        src="/pageStuff/pageBg.jpg"
+        style="width: 100vw; height: 100vh; object-fit: cover"
+      />
 
-        <div style="position: fixed; width: 100vw; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 40px;">
-            <h2>{{texth2}}</h2>
-            <h1>{{texth1}}</h1>
-            <p>{{textP}}</p>
-        </div>
-
-        
+      <div
+        style="
+          position: fixed;
+          width: 100vw;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding-top: 40px;
+        "
+      >
+        <h2>{{texth2}}</h2>
+        <h1>{{texth1}}</h1>
+        <p>{{textP}}</p>
+      </div>
     </div>
-</body>
+  </body>
 </html>
